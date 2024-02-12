@@ -2388,7 +2388,8 @@ def _gen_potcar_summary_stats(
     func_dir_exist: dict[str, str] = {}
     vasp_psp_dir = vasp_psp_dir or SETTINGS.get("PMG_VASP_PSP_DIR")
     for func, func_dir in PotcarSingle.functional_dir.items():
-        if os.path.isdir(f"{vasp_psp_dir}/{func_dir}"):
+        func_dir = f"{vasp_psp_dir}/{func_dir}"
+        if os.path.isdir(func_dir):
             func_dir_exist[func] = func_dir
         else:
             warnings.warn(f"missing {func_dir} POTCAR directory.")
@@ -2402,8 +2403,8 @@ def _gen_potcar_summary_stats(
         new_summary_stats.setdefault(func, {})  # initialize dict if key missing
 
         potcar_list = [
-            *glob(f"{vasp_psp_dir}/{func_dir}/POTCAR*"),
-            *glob(f"{vasp_psp_dir}/{func_dir}/*/POTCAR*"),
+            *glob(f"{func_dir}/POTCAR*"),
+            *glob(f"{func_dir}/*/POTCAR*"),
         ]
         for potcar in potcar_list:
             psp = PotcarSingle.from_file(potcar)
