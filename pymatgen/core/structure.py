@@ -2969,10 +2969,6 @@ class IStructure(SiteCollection, MSONable):
                 struct = struct.get_sorted_structure()
             return struct
 
-        from pymatgen.io.exciting import ExcitingInput
-        from pymatgen.io.lmto import LMTOCtrl
-        from pymatgen.io.vasp import Chgcar, Vasprun
-
         fname = os.path.basename(filename)
         with zopen(filename, mode="rt", errors="replace") as file:
             contents = file.read()
@@ -2982,8 +2978,10 @@ class IStructure(SiteCollection, MSONable):
             struct = cls.from_str(contents, fmt="poscar", primitive=primitive, sort=sort, merge_tol=merge_tol, **kwargs)
 
         elif fnmatch(fname, "CHGCAR*") or fnmatch(fname, "LOCPOT*"):
+            from pymatgen.io.vasp import Chgcar
             struct = Chgcar.from_file(filename, **kwargs).structure
         elif fnmatch(fname, "vasprun*.xml*"):
+            from pymatgen.io.vasp import Vasprun
             struct = Vasprun(filename, **kwargs).final_structure
         elif fnmatch(fname.lower(), "*.cssr*"):
             return cls.from_str(contents, fmt="cssr", primitive=primitive, sort=sort, merge_tol=merge_tol, **kwargs)
@@ -2994,10 +2992,12 @@ class IStructure(SiteCollection, MSONable):
         elif fnmatch(fname, "*.xsf"):
             return cls.from_str(contents, fmt="xsf", primitive=primitive, sort=sort, merge_tol=merge_tol, **kwargs)
         elif fnmatch(fname, "input*.xml"):
+            from pymatgen.io.exciting import ExcitingInput
             return ExcitingInput.from_file(fname, **kwargs).structure
         elif fnmatch(fname, "*rndstr.in*") or fnmatch(fname, "*lat.in*") or fnmatch(fname, "*bestsqs*"):
             return cls.from_str(contents, fmt="mcsqs", primitive=primitive, sort=sort, merge_tol=merge_tol, **kwargs)
         elif fnmatch(fname, "CTRL*"):
+            from pymatgen.io.lmto import LMTOCtrl
             return LMTOCtrl.from_file(filename=filename, **kwargs).structure
         elif fnmatch(fname, "inp*.xml") or fnmatch(fname, "*.in*") or fnmatch(fname, "inp_*"):
             from pymatgen.io.fleur import FleurInput
