@@ -5,6 +5,7 @@ import os
 import random
 
 import orjson
+import json
 from line_profiler import profile
 
 from pymatgen.core import Lattice, Structure
@@ -39,10 +40,13 @@ def generate_and_save_structures(n, output_dir):
         filename = f"structure_{i:04d}.json.gz"
         filepath = os.path.join(output_dir, filename)
 
-        with gzip.open(filepath, "wb") as f:
-            dct = structure.as_dict()
-            #     json.dump(dct, f)
-            f.write(orjson.dumps(dct))
+        # with gzip.open(filepath, "wb") as f:
+        #     dct = structure.as_dict()
+        #     f.write(orjson.dumps(dct))
+
+        with gzip.open(filepath, "wt", encoding="utf-8") as f:
+            dct  = structure.as_dict()
+            json.dump(dct, f)
 
 
 if __name__ == "__main__":
