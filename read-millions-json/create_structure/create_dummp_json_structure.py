@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import gzip
-import json
 import os
 import random
 
-from tqdm import tqdm
+import orjson
+from line_profiler import profile
 
 from pymatgen.core import Lattice, Structure
 
-# Global config
-N_STRUCTURES = 10_000_000  # Number of structures to generate
+N_STRUCTURES = 1_000  # Number of structures to generate
 OUTPUT_DIR = "dummy_structures"  # Output directory
-NUM_ATOMS_PER_STRUCTURE = (10, 100)  # Min and max atoms per structure (inclusive)
+NUM_ATOMS_PER_STRUCTURE = (10, 100)
 
 
 def generate_dummy_structure():
@@ -31,19 +30,19 @@ def generate_dummy_structure():
     return Structure(lattice, species, coords)
 
 
-def save_structure_to_gzipped_json(structure, filepath):
-    with gzip.open(filepath, "wt", encoding="utf-8") as f:
-        json.dump(structure.as_dict(), f, indent=2)
-
-
+@profile
 def generate_and_save_structures(n, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
-    for i in tqdm(range(1, n + 1), desc="Generating structures", unit="struct"):
+    for i in range(n):
         structure = generate_dummy_structure()
         filename = f"structure_{i:04d}.json.gz"
         filepath = os.path.join(output_dir, filename)
-        save_structure_to_gzipped_json(structure, filepath)
+
+        with gzip.open(filepath, "wb") as f:
+            dct = structure.as_dict()
+            #     json.dump(dct, f)
+            f.write(orjson.dumps(dct))
 
 
 if __name__ == "__main__":
