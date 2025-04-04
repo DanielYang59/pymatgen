@@ -8,10 +8,12 @@ import itertools
 import math
 import operator
 import warnings
+from functools import cached_property
 from collections import defaultdict
 from fractions import Fraction
 from functools import reduce
 from typing import TYPE_CHECKING, cast
+from line_profiler import profile
 
 import numpy as np
 from monty.dev import deprecated
@@ -138,7 +140,7 @@ class Lattice(MSONable):
 
         return fmt.format(*(format(c, fmt_spec) for row in matrix for c in row))
 
-    @property
+    @cached_property
     def lengths(self) -> Vector3D:
         """Lattice lengths.
 
@@ -147,7 +149,7 @@ class Lattice(MSONable):
         """
         return tuple(np.sqrt(np.sum(self._matrix**2, axis=1)).tolist())
 
-    @property
+    @cached_property
     def angles(self) -> Vector3D:
         """Lattice angles.
 
@@ -510,7 +512,7 @@ class Lattice(MSONable):
         """Angle gamma of lattice in degrees."""
         return self.angles[2]
 
-    @property
+    @cached_property
     def volume(self) -> float:
         """Volume of the unit cell in Angstrom^3."""
         matrix = self._matrix
@@ -900,6 +902,7 @@ class Lattice(MSONable):
 
         return min(np.linalg.norm(reflection - selling2) for reflection in all_reflections)
 
+    @profile
     def as_dict(self, verbosity: int = 0) -> dict:
         """MSONable dict representation of the Lattice.
 
