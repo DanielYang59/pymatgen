@@ -20,6 +20,7 @@ jobs:
           python-version: "3.11"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+
       - name: Install dependencies
         run: |
           uv sync --group lint
@@ -36,5 +37,9 @@ jobs:
       - name: pyright
         run: uv run pyright src
 
-      - name: markdown-link-check
+      - name: Run linkspector
         uses: umbrelladocs/action-linkspector@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          fail_level: any
