@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from typing import Any, Literal
 
     from matplotlib.colors import Colormap
-    from numpy.typing import ArrayLike
+    from numpy.typing import ArrayLike, NDArray
     from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
@@ -367,6 +367,7 @@ class PhaseDiagram(MSONable):
 
         self.elements = elements
         self.entries = entries
+
         if computed_data is None:
             computed_data = self._compute()
         else:
@@ -376,16 +377,20 @@ class PhaseDiagram(MSONable):
 
             # Update keys to be Element objects in case they are strings in pre-computed data
             computed_data["el_refs"] = [(Element(el_str), entry) for el_str, entry in computed_data["el_refs"]]
+
         self.computed_data = computed_data
-        self.facets = computed_data["facets"]
-        self.simplexes = computed_data["simplexes"]
-        self.all_entries = computed_data["all_entries"]
-        self.qhull_data = computed_data["qhull_data"]
-        self.dim = computed_data["dim"]
-        self.el_refs = dict(computed_data["el_refs"])
-        self.qhull_entries = tuple(computed_data["qhull_entries"])
-        self._qhull_spaces = tuple(frozenset(e.elements) for e in self.qhull_entries)
-        self._stable_entries = tuple({self.qhull_entries[idx] for idx in set(itertools.chain(*self.facets))})
+
+        self.facets: list[NDArray[int]] = computed_data["facets"]
+        self.simplexes: list[Simplex] = computed_data["simplexes"]
+        self.all_entries: list[PDEntry] = computed_data["all_entries"]
+        self.qhull_data: np.ndarray = computed_data["qhull_data"]
+        self.dim: int = computed_data["dim"]
+        self.el_refs: dict[Element, PDEntry] = dict(computed_data["el_refs"])
+        self.qhull_entries: tuple[PDEntry, ...] = tuple(computed_data["qhull_entries"])
+        self._qhull_spaces: tuple[PDEntry, ...] = tuple(frozenset(e.elements) for e in self.qhull_entries)
+        self._stable_entries: tuple[PDEntry, ...] = tuple(
+            {self.qhull_entries[idx] for idx in set(itertools.chain(*self.facets))}
+        )
         self._stable_spaces = tuple(frozenset(e.elements) for e in self._stable_entries)
 
     def as_dict(self):
