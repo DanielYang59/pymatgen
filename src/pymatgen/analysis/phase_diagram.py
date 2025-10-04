@@ -147,6 +147,16 @@ class GrandPotPDEntry(PDEntry):
         self.original_comp = self._composition
         self.chempots = chempots
 
+    def __repr__(self):
+        output = [
+            (
+                f"GrandPotPDEntry with original composition {self.original_entry.composition}, "
+                f"energy = {self.original_entry.energy:.4f}, "
+            ),
+            "chempots = " + ", ".join(f"mu_{el} = {mu:.4f}" for el, mu in self.chempots.items()),
+        ]
+        return "".join(output)
+
     @property
     def composition(self) -> Composition:
         """The composition after removing free species.
@@ -169,16 +179,6 @@ class GrandPotPDEntry(PDEntry):
     def energy(self) -> float:
         """Grand potential energy."""
         return self._energy - self.chemical_energy
-
-    def __repr__(self):
-        output = [
-            (
-                f"GrandPotPDEntry with original composition {self.original_entry.composition}, "
-                f"energy = {self.original_entry.energy:.4f}, "
-            ),
-            "chempots = " + ", ".join(f"mu_{el} = {mu:.4f}" for el, mu in self.chempots.items()),
-        ]
-        return "".join(output)
 
     def as_dict(self):
         """Get MSONable dict representation of GrandPotPDEntry."""
@@ -237,6 +237,14 @@ class TransformedPDEntry(PDEntry):
         if not all(self.rxn.get_coeff(comp) <= TransformedPDEntry.amount_tol for comp in self.sp_mapping):
             raise TransformedPDEntryError("Only reactions with positive amounts of reactants allowed")
 
+    def __repr__(self):
+        output = [
+            f"TransformedPDEntry {self.composition}",
+            f" with original composition {self.original_entry.composition}",
+            f", energy = {self.original_entry.energy:.4f}",
+        ]
+        return "".join(output)
+
     @property
     def composition(self) -> Composition:
         """The composition in the dummy species space.
@@ -254,14 +262,6 @@ class TransformedPDEntry(PDEntry):
         trans_comp = {k: v * factor for k, v in trans_comp.items() if v > TransformedPDEntry.amount_tol}
 
         return Composition(trans_comp)
-
-    def __repr__(self):
-        output = [
-            f"TransformedPDEntry {self.composition}",
-            f" with original composition {self.original_entry.composition}",
-            f", energy = {self.original_entry.energy:.4f}",
-        ]
-        return "".join(output)
 
     def as_dict(self):
         """Get MSONable dict representation of TransformedPDEntry."""
@@ -394,6 +394,15 @@ class PhaseDiagram(MSONable):
         self._stable_spaces = tuple(frozenset(e.elements) for e in self._stable_entries)
 
     def as_dict(self):
+    def __repr__(self) -> str:
+        symbols = [el.symbol for el in self.elements]
+        output = [
+            f"{'-'.join(symbols)} phase diagram",
+            f"{len(self.stable_entries)} stable phases: ",
+            ", ".join(entry.name for entry in sorted(self.stable_entries, key=str)),
+        ]
+        return "\n".join(output)
+
         """Get MSONable dict representation of PhaseDiagram."""
         return {
             "@module": type(self).__module__,
@@ -589,15 +598,6 @@ class PhaseDiagram(MSONable):
             Formation energy **per atom** from the elemental references.
         """
         return self.get_form_energy(entry) / entry.composition.num_atoms
-
-    def __repr__(self) -> str:
-        symbols = [el.symbol for el in self.elements]
-        output = [
-            f"{'-'.join(symbols)} phase diagram",
-            f"{len(self.stable_entries)} stable phases: ",
-            ", ".join(entry.name for entry in sorted(self.stable_entries, key=str)),
-        ]
-        return "\n".join(output)
 
     @lru_cache(1)  # noqa: B019
     def _get_facet_and_simplex(self, comp: Composition) -> tuple[Simplex, Simplex]:
