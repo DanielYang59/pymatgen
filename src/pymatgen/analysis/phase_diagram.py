@@ -38,11 +38,13 @@ from pymatgen.util.string import htmlify, latexify
 if TYPE_CHECKING:
     from collections.abc import Collection, Iterator, Sequence
     from io import StringIO
-    from typing import Any, Literal
+    from typing import Any, ClassVar, Literal
 
     from matplotlib.colors import Colormap
     from numpy.typing import ArrayLike, NDArray
     from typing_extensions import Self
+
+    from pymatgen.entries.computed_entries import ComputedEntry
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +128,7 @@ class GrandPotPDEntry(PDEntry):
     dict.
     """
 
-    def __init__(self, entry, chempots, name=None):
+    def __init__(self, entry: PDEntry, chempots: dict[Element, float], name: str | None = None) -> None:
         """
         Args:
             entry: A PDEntry-like object.
@@ -147,7 +149,7 @@ class GrandPotPDEntry(PDEntry):
         self.original_comp = self._composition
         self.chempots = chempots
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         output = [
             (
                 f"GrandPotPDEntry with original composition {self.original_entry.composition}, "
@@ -167,7 +169,7 @@ class GrandPotPDEntry(PDEntry):
         return Composition({el: self._composition[el] for el in self._composition.elements if el not in self.chempots})
 
     @property
-    def chemical_energy(self):
+    def chemical_energy(self) -> float:
         """The chemical energy term mu*N in the grand potential.
 
         Returns:
@@ -180,7 +182,7 @@ class GrandPotPDEntry(PDEntry):
         """Grand potential energy."""
         return self._energy - self.chemical_energy
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         """Get MSONable dict representation of GrandPotPDEntry."""
         return {
             "@module": type(self).__module__,
@@ -213,7 +215,7 @@ class TransformedPDEntry(PDEntry):
     """
 
     # Tolerance for determining if amount of a composition is positive.
-    amount_tol = 1e-5
+    amount_tol: ClassVar[float] = 1e-5
 
     def __init__(self, entry, sp_mapping, name=None):
         """
@@ -337,8 +339,8 @@ class PhaseDiagram(MSONable):
     """
 
     # Tolerance for determining if formation energy is positive.
-    formation_energy_tol = 1e-11
-    numerical_tol = 1e-8
+    formation_energy_tol: ClassVar[float] = 1e-11
+    numerical_tol: ClassVar[float] = 1e-8
 
     def __init__(
         self,
@@ -542,7 +544,7 @@ class PhaseDiagram(MSONable):
         return set(self._stable_entries)
 
     @lru_cache(1)  # noqa: B019
-    def _get_stable_entries_in_space(self, space) -> list[Entry]:
+    def _get_stable_entries_in_space(self, space: set[Element]) -> list[Entry]:
         """
         Args:
             space (set[Element]): set of Element objects.
@@ -614,7 +616,7 @@ class PhaseDiagram(MSONable):
 
         raise RuntimeError(f"No facet found for {comp = }")
 
-    def _get_all_facets_and_simplexes(self, comp):
+    def _get_all_facets_and_simplexes(self, comp: Composition) -> list:
         """Get all facets that a composition falls into.
 
         Args:
@@ -906,7 +908,7 @@ class PhaseDiagram(MSONable):
             return self.get_decomp_and_e_above_hull(entry, allow_negative=True, **kwargs)
 
         # take entries with negative e_form and different compositions as competing entries
-        competing_entries = {c for c in compare_entries if id(c) not in same_comp_mem_ids}
+        competing_entries: set[PDEntry] = {c for c in compare_entries if id(c) not in same_comp_mem_ids}
 
         # NOTE SLSQP optimizer doesn't scale well for > 300 competing entries.
         if len(competing_entries) > space_limit and not stable_only:
@@ -933,7 +935,7 @@ class PhaseDiagram(MSONable):
                 stacklevel=2,
             )
 
-        decomp = _get_slsqp_decomp(entry.composition, competing_entries, tols, maxiter)
+        decomp = _get_slsqp_decomp(entry.composition, list(competing_entries), tols, maxiter)
 
         # find the minimum alternative formation energy for the decomposition
         decomp_enthalpy = np.sum([c.energy_per_atom * amt for c, amt in decomp.items()])
@@ -942,7 +944,7 @@ class PhaseDiagram(MSONable):
 
         return decomp, decomp_enthalpy
 
-    def get_phase_separation_energy(self, entry, **kwargs):
+    def get_phase_separation_energy(self, entry: PDEntry, **kwargs):
         """
         Provides the energy to the convex hull for the given entry. For stable entries
         already in the phase diagram the algorithm provides the phase separation energy
@@ -971,7 +973,7 @@ class PhaseDiagram(MSONable):
         """
         return self.get_decomp_and_phase_separation_energy(entry, **kwargs)[1]
 
-    def get_composition_chempots(self, comp):
+    def get_composition_chempots(self, comp: Composition) -> dict[Element, float]:
         """Get the chemical potentials for all elements at a given composition.
 
         Args:
@@ -983,7 +985,7 @@ class PhaseDiagram(MSONable):
         facet = self._get_facet_and_simplex(comp)[0]
         return self._get_facet_chempots(facet)
 
-    def get_all_chempots(self, comp):
+    def get_all_chempots(self, comp: Composition) -> dict[str, dict[Element, float]]:
         """Get chemical potentials at a given composition.
 
         Args:
@@ -1001,7 +1003,7 @@ class PhaseDiagram(MSONable):
 
         return chempots
 
-    def get_transition_chempots(self, element):
+    def get_transition_chempots(self, element: Element) -> tuple[float, ...]:
         """Get the critical chemical potentials for an element in the Phase
         Diagram.
 
@@ -1020,7 +1022,7 @@ class PhaseDiagram(MSONable):
             chempots = self._get_facet_chempots(facet)
             critical_chempots.append(chempots[element])
 
-        clean_pots = []
+        clean_pots: list[float] = []
         for c in sorted(critical_chempots):
             if len(clean_pots) == 0 or not math.isclose(
                 c, clean_pots[-1], abs_tol=PhaseDiagram.numerical_tol, rel_tol=0
@@ -1029,7 +1031,11 @@ class PhaseDiagram(MSONable):
         clean_pots.reverse()
         return tuple(clean_pots)
 
-    def get_critical_compositions(self, comp1, comp2):
+    def get_critical_compositions(
+        self,
+        comp1: Composition,
+        comp2: Composition,
+    ) -> list[Composition]:
         """Get the critical compositions along the tieline between two
         compositions. I.e. where the decomposition products change.
         The endpoints are also returned.
@@ -1089,7 +1095,12 @@ class PhaseDiagram(MSONable):
 
         return [Composition((elem, val) for elem, val in zip(pd_els, m, strict=True)) for m in cs]
 
-    def get_element_profile(self, element, comp, comp_tol=1e-5):
+    def get_element_profile(
+        self,
+        element: Element,
+        comp: Composition,
+        comp_tol: float = 1e-5,
+    ) -> list[dict[str, Any]]:
         """
         Provides the element evolution data for a composition. For example, can be used
         to analyze Li conversion voltages by varying mu_Li and looking at the phases
@@ -1137,7 +1148,10 @@ class PhaseDiagram(MSONable):
         return evolution
 
     def get_chempot_range_map(
-        self, elements: Sequence[Element], referenced: bool = True, joggle: bool = True
+        self,
+        elements: Sequence[Element],
+        referenced: bool = True,
+        joggle: bool = True,
     ) -> dict[Element, list[Simplex]]:
         """Get a chemical potential range map for each stable entry.
 
@@ -1190,7 +1204,12 @@ class PhaseDiagram(MSONable):
 
         return chempot_ranges
 
-    def getmu_vertices_stability_phase(self, target_comp, dep_elt, tol_en=1e-2):
+    def getmu_vertices_stability_phase(
+        self,
+        target_comp: Composition,
+        dep_elt: Element,
+        tol_en: float = 1e-2,
+    ) -> list[dict[Element, float]] | None:
         """Get a set of chemical potentials corresponding to the vertices of
         the simplex in the chemical potential phase diagram.
         The simplex is built using all elements in the target_composition
@@ -1224,7 +1243,7 @@ class PhaseDiagram(MSONable):
             if elem.composition.reduced_composition == target_comp.reduced_composition:
                 multiplier = elem.composition[dep_elt] / target_comp[dep_elt]
                 ef = elem.energy / multiplier
-                all_coords = []
+                all_coords: list[dict] = []
                 for simplex in chempots:
                     for v in simplex._coords:
                         elements = [elem for elem in self.elements if elem != dep_elt]
@@ -1248,7 +1267,11 @@ class PhaseDiagram(MSONable):
                 return all_coords
         return None
 
-    def get_chempot_range_stability_phase(self, target_comp, open_elt):
+    def get_chempot_range_stability_phase(
+        self,
+        target_comp: Composition,
+        open_elt: Element,
+    ) -> dict[Element, tuple[float, float]]:
         """Get a set of chemical potentials corresponding to the max and min
         chemical potential of the open element for a given composition. It is
         quite common to have for instance a ternary oxide (e.g., ABO3) for
@@ -1470,7 +1493,7 @@ class CompoundPhaseDiagram(PhaseDiagram):
     """
 
     # Tolerance for determining if amount of a composition is positive.
-    amount_tol = 1e-5
+    amount_tol: ClassVar[float] = 1e-5
 
     def __init__(self, entries, terminal_compositions, normalize_terminal_compositions=True):
         """Initialize a CompoundPhaseDiagram.
@@ -1613,17 +1636,17 @@ class PatchedPhaseDiagram(PhaseDiagram):
         elements (list[Element]): List of elements in the phase diagram.
 
     NOTE following methods are inherited unchanged from `PhaseDiagram`:
-        __repr__,
-        all_entries_hulldata,
-        unstable_entries,
-        stable_entries,
-        get_form_energy(),
-        get_form_energy_per_atom(),
-        get_hull_energy(),
-        get_e_above_hull(),
-        get_decomp_and_e_above_hull(),
-        get_decomp_and_phase_separation_energy(),
-        get_phase_separation_energy()
+        - __repr__
+        - all_entries_hulldata
+        - unstable_entries
+        - stable_entries
+        - get_form_energy
+        - get_form_energy_per_atom
+        - get_hull_energy
+        - get_e_above_hull
+        - get_decomp_and_e_above_hull
+        - get_decomp_and_phase_separation_energy
+        - get_phase_separation_energ
     """
 
     def __init__(
@@ -1943,7 +1966,14 @@ class ReactionDiagram:
     an electrolyte and an electrode.
     """
 
-    def __init__(self, entry1, entry2, all_entries, tol: float = 1e-4, float_fmt="%.4f"):
+    def __init__(
+        self,
+        entry1: ComputedEntry,
+        entry2: ComputedEntry,
+        all_entries: list[ComputedEntry],
+        tol: float = 1e-4,
+        float_fmt: str = "%.4f",
+    ) -> None:
         """
         Args:
             entry1 (ComputedEntry): Entry for 1st component. Note that
@@ -2062,7 +2092,7 @@ class ReactionDiagram:
         self.all_entries = all_entries
         self.pd = pd
 
-    def get_compound_pd(self):
+    def get_compound_pd(self) -> CompoundPhaseDiagram:
         """Get the CompoundPhaseDiagram object, which can then be used for
         plotting.
 
@@ -2108,11 +2138,11 @@ def get_facets(qhull_data: ArrayLike, joggle: bool = False) -> ConvexHull:
 
 
 def _get_slsqp_decomp(
-    comp,
-    competing_entries,
-    tols=(1e-8,),
-    maxiter=1000,
-):
+    comp: Composition,
+    competing_entries: Sequence[PDEntry],
+    tols: Sequence[float] = (1e-8,),
+    maxiter: int = 1000,
+) -> dict:
     """Find the amounts of competing compositions that minimize the energy of a
     given composition.
 
@@ -2372,7 +2402,13 @@ class PDPlotter:
             fig = self.get_plot(**kwargs)
             fig.write_image(stream, format=image_format)
 
-    def plot_element_profile(self, element, comp, show_label_index=None, xlim=5):
+    def plot_element_profile(
+        self,
+        element: Element,
+        comp: Composition,
+        show_label_index: list[int] | None = None,
+        xlim: float = 5,
+    ) -> plt.Axes:
         """
         Draw the element profile plot for a composition varying different
         chemical potential of an element.
@@ -2437,7 +2473,7 @@ class PDPlotter:
 
         return ax
 
-    def plot_chempot_range_map(self, elements, referenced=True) -> None:
+    def plot_chempot_range_map(self, elements: Sequence[Element], referenced: bool = True) -> None:
         """
         Plot the chemical potential range _map using matplotlib. Currently works only for
         3-component PDs. This shows the plot but does not return it.
@@ -2455,7 +2491,7 @@ class PDPlotter:
         """
         self.get_chempot_range_map_plot(elements, referenced=referenced).show()
 
-    def get_chempot_range_map_plot(self, elements, referenced=True):
+    def get_chempot_range_map_plot(self, elements: Sequence[Element], referenced: bool = True) -> plt.Axes:
         """Get a plot of the chemical potential range _map. Currently works
         only for 3-component PDs.
 
@@ -2481,7 +2517,7 @@ class PDPlotter:
         for entry, lines in chempot_ranges.items():
             comp = entry.composition
             center_x = center_y = 0
-            coords = []
+            coords: list[list] = []
             contain_zero = any(comp.get_atomic_fraction(el) == 0 for el in elements)
             is_boundary = (not contain_zero) and sum(comp.get_atomic_fraction(el) for el in elements) == 1
             for line in lines:
@@ -2559,7 +2595,7 @@ class PDPlotter:
         plt.tight_layout()
         return ax
 
-    def get_contour_pd_plot(self):
+    def get_contour_pd_plot(self) -> plt.Axes:
         """
         Plot a contour phase diagram plot, where phase triangles are colored
         according to degree of instability by interpolation. Currently only
@@ -2659,7 +2695,7 @@ class PDPlotter:
 
         return lines, stable_entries, unstable_entries
 
-    def _create_plotly_figure_layout(self, label_stable=True):
+    def _create_plotly_figure_layout(self, label_stable: bool = True) -> dict[str, Any]:
         """
         Creates layout for plotly phase diagram figure and updates with
         figure annotations.
@@ -2768,7 +2804,7 @@ class PDPlotter:
 
         return None
 
-    def _create_plotly_fill(self):
+    def _create_plotly_fill(self) -> list[go.Mesh3d]:
         """
         Creates shaded mesh traces for coloring the hull.
 
@@ -2907,7 +2943,7 @@ class PDPlotter:
 
         return traces
 
-    def _create_plotly_stable_labels(self, label_stable=True):
+    def _create_plotly_stable_labels(self, label_stable: bool = True) -> go.Scatter | go.Scatter3d:
         """
         Creates a (hidable) scatter trace containing labels of stable phases.
         Contains some functionality for creating sensible label positions. This method
@@ -2970,7 +3006,7 @@ class PDPlotter:
             formula = comp.reduced_formula
             text.append(htmlify(formula))
 
-        visible = True
+        visible: str | bool = True
         if not label_stable or self._dim == 4:
             visible = "legendonly"
 
@@ -2994,7 +3030,7 @@ class PDPlotter:
 
         return stable_labels_plot
 
-    def _create_plotly_element_annotations(self):
+    def _create_plotly_element_annotations(self) -> list[dict] | None:
         """
         Creates terminal element annotations for Plotly phase diagrams. This method does
         not apply to ternary_2d plots.
@@ -3555,7 +3591,7 @@ class PDPlotter:
 
         return stable_marker_plot, unstable_marker_plot, highlight_marker_plot
 
-    def _create_plotly_uncertainty_shading(self, stable_marker_plot):
+    def _create_plotly_uncertainty_shading(self, stable_marker_plot: go.Scatter) -> go.Scatter:
         """
         Creates shaded uncertainty region for stable entries. Currently only works
         for binary (dim=2) phase diagrams.
@@ -3586,7 +3622,7 @@ class PDPlotter:
             outline = points[:, :2].copy()
             outline[:, 1] += points[:, 2]
 
-            last = -1
+            last: int | None = -1
             if transformed:
                 last = None  # allows for uncertainty in terminal compounds
 
@@ -3608,7 +3644,7 @@ class PDPlotter:
 
         return uncertainty_plot
 
-    def _create_plotly_ternary_support_lines(self):
+    def _create_plotly_ternary_support_lines(self) -> go.Scatter3d:
         """
         Creates support lines which aid in seeing the ternary hull in three
         dimensions.
@@ -3616,7 +3652,7 @@ class PDPlotter:
         Returns:
             go.Scatter3d plot of support lines for ternary phase diagram.
         """
-        stable_entry_coords = dict(map(reversed, self.pd_plot_data[1].items()))
+        stable_entry_coords: dict = {v: k for k, v in self.pd_plot_data[1].items()}
 
         elem_coords = [stable_entry_coords[entry] for entry in self._pd.el_refs.values()]
 
@@ -3645,16 +3681,16 @@ class PDPlotter:
 
     def _get_matplotlib_2d_plot(
         self,
-        label_stable=True,
-        label_unstable=True,
-        ordering=None,
-        energy_colormap=None,
-        vmin_mev=-60.0,
-        vmax_mev=60.0,
-        show_colorbar=True,
-        process_attributes=False,
-        ax: plt.Axes = None,
-    ):
+        label_stable: bool = True,
+        label_unstable: bool = True,
+        ordering: Sequence[Literal["Up", "Left", "Right"]] | None = None,
+        energy_colormap: str | Colormap | None = None,
+        vmin_mev: float = -60.0,
+        vmax_mev: float = 60.0,
+        show_colorbar: bool = True,
+        process_attributes: bool = False,
+        ax: plt.Axes | None = None,
+    ) -> plt.Axes:
         """Show the plot using matplotlib."""
         ax = ax or pretty_plot(8, 6)
 
@@ -3851,7 +3887,11 @@ class PDPlotter:
         plt.subplots_adjust(left=0.09, right=0.98, top=0.98, bottom=0.07)
         return ax
 
-    def _get_matplotlib_3d_plot(self, label_stable=True, ax: plt.Axes = None):
+    def _get_matplotlib_3d_plot(
+        self,
+        label_stable: bool = True,
+        ax: plt.Axes | None = None,
+    ) -> plt.Axes:
         """Show the plot using matplotlib.
 
         Args:
@@ -3894,23 +3934,23 @@ class PDPlotter:
         return ax
 
 
-def uniquelines(q):
+def uniquelines(q: list[NDArray[int]]) -> set[tuple[int, int]]:
     """
     Given all the facets, convert it into a set of unique lines. Specifically
     used for converting convex hull facets into line pairs of coordinates.
 
     Args:
         q: A 2-dim sequence, where each row represents a facet. e.g.
-            [[1,2,3],[3,6,7],...]
+            [[1, 2, 3], [3, 6, 7], ...]
 
     Returns:
         setoflines:
-            A set of tuple of lines. e.g. ((1,2), (1,3), (2,3), ....)
+            A set of tuple of lines. e.g. ((1, 2), (1, 3), ...)
     """
     return {tuple(sorted(line)) for facets in q for line in itertools.combinations(facets, 2)}
 
 
-def triangular_coord(coord):
+def triangular_coord(coord: ArrayLike) -> np.ndarray:
     """
     Convert a 2D coordinate into a triangle-based coordinate system for a
     prettier phase diagram.
@@ -3927,7 +3967,7 @@ def triangular_coord(coord):
     return result.transpose()
 
 
-def tet_coord(coord):
+def tet_coord(coord: ArrayLike) -> np.ndarray:
     """
     Convert a 3D coordinate into a tetrahedron based coordinate system for a
     prettier phase diagram.
@@ -3949,7 +3989,12 @@ def tet_coord(coord):
     return result.transpose()
 
 
-def order_phase_diagram(lines, stable_entries, unstable_entries, ordering):
+def order_phase_diagram(
+    lines: list,
+    stable_entries: dict[Any, PDEntry],
+    unstable_entries: dict[PDEntry, Any],
+    ordering: Sequence[Literal["Up", "Left", "Right"]],
+) -> tuple[list, dict[Any, PDEntry], dict[PDEntry, Any]]:
     """
     Orders the entries (their coordinates) in a phase diagram plot according
     to the user specified ordering.
@@ -3968,12 +4013,11 @@ def order_phase_diagram(lines, stable_entries, unstable_entries, ordering):
 
     Returns:
         tuple[list, dict, dict]:
-            - new_lines is a list of list of coordinates for lines in the PD.
-            - new_stable_entries is a {coordinate: entry} for each stable node
+            - a list of list of coordinates for lines in the PD.
+            - a {coordinate: entry} for each stable node
             in the phase diagram. (Each coordinate can only have one
             stable phase)
-            - new_unstable_entries is a {entry: coordinates} for all unstable
-            nodes in the phase diagram.
+            - a {entry: coordinates} for all unstable nodes in the phase diagram.
     """
     yup = -1000.0
     xleft = 1000.0
@@ -3982,16 +4026,16 @@ def order_phase_diagram(lines, stable_entries, unstable_entries, ordering):
     nameup = ""
     nameleft = ""
     nameright = ""
-    for coord in stable_entries:
+    for coord, entry in stable_entries.items():
         if coord[0] > xright:
             xright = coord[0]
-            nameright = stable_entries[coord].name
+            nameright = entry.name
         if coord[0] < xleft:
             xleft = coord[0]
-            nameleft = stable_entries[coord].name
+            nameleft = entry.name
         if coord[1] > yup:
             yup = coord[1]
-            nameup = stable_entries[coord].name
+            nameup = entry.name
 
     if (nameup not in ordering) or (nameright not in ordering) or (nameleft not in ordering):
         raise ValueError(
