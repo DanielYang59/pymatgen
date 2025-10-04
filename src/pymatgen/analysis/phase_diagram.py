@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from io import StringIO
     from typing import Any, Literal
 
+    from matplotlib.colors import Colormap
     from numpy.typing import ArrayLike
     from typing_extensions import Self
 
@@ -1302,14 +1303,14 @@ class PhaseDiagram(MSONable):
         ternary_style: Literal["2d", "3d"] = "2d",
         label_stable: bool = True,
         label_unstable: bool = True,
-        ordering: Sequence[str] | None = None,
-        energy_colormap=None,
+        ordering: Sequence[Literal["Up", "Left", "Right"]] | None = None,
+        energy_colormap: str | Colormap | None = None,
         process_attributes: bool = False,
-        ax: plt.Axes = None,
+        ax: plt.Axes | None = None,
         label_uncertainties: bool = False,
         fill: bool = True,
         **kwargs,
-    ):
+    ) -> go.Figure | plt.Axes:
         """
         Convenient wrapper for PDPlotter. Initializes a PDPlotter object and calls
         get_plot() with provided combined arguments.
@@ -2245,20 +2246,22 @@ class PDPlotter:
         self,
         label_stable: bool = True,
         label_unstable: bool = True,
-        ordering: Sequence[str] | None = None,
-        energy_colormap=None,
+        # `matplotlib` only
+        ordering: Sequence[Literal["Up", "Left", "Right"]] | None = None,
+        energy_colormap: str | Colormap | None = None,
         process_attributes: bool = False,
-        ax: plt.Axes = None,
+        ax: plt.Axes | None = None,
+        # `plotly` only
         label_uncertainties: bool = False,
         fill: bool = True,
         highlight_entries: Collection[PDEntry] | None = None,
-    ) -> go.Figure | plt.Axes:
+    ) -> go.Figure | plt.Axes | None:
         """
         Args:
             label_stable: Whether to label stable compounds.
             label_unstable: Whether to label unstable compounds.
-            ordering: Ordering of vertices, given as a list ['Up',
-                'Left','Right'] (matplotlib only).
+            ordering: Ordering of vertices, given as a list ["Up",
+                "Left", "Right"] (matplotlib only).
             energy_colormap: Colormap for coloring energy (matplotlib only).
             process_attributes: Whether to process the attributes (matplotlib only).
             ax: Existing matplotlib Axes object if plotting multiple phase diagrams
@@ -2689,7 +2692,7 @@ class PDPlotter:
 
         return layout
 
-    def _create_plotly_lines(self):
+    def _create_plotly_lines(self) -> go.Scatter | go.Scatterternary | go.Scatter3d | None:
         """
         Create Plotly scatter plots containing line traces of phase diagram facets.
 
@@ -2697,12 +2700,12 @@ class PDPlotter:
             Either a go.Scatter (binary), go.Scatterternary (ternary_2d), or
             go.Scatter3d plot (ternary_3d, quaternary)
         """
-        line_plot = None
+
         x, y, z, energies = [], [], [], []
 
         pd = self._pd
 
-        plot_args = {
+        plot_args: dict[str, Any] = {
             "mode": "lines",
             "hoverinfo": "none",
             "line": {"color": "black", "width": 4.0},
@@ -2740,16 +2743,19 @@ class PDPlotter:
                     z += [*line[2], None]
 
         if self._dim == 2:
-            line_plot = go.Scatter(x=x, y=y, **plot_args)
-        elif self._dim == 3 and self.ternary_style == "2d":
-            line_plot = go.Scatterternary(a=x, b=y, c=z, **plot_args)
-        elif self._dim == 3 and self.ternary_style == "3d":
-            line_plot = go.Scatter3d(x=y, y=x, z=z, **plot_args)
-        elif self._dim == 4:
-            plot_args["line"]["width"] = 1.5
-            line_plot = go.Scatter3d(x=x, y=y, z=z, **plot_args)
+            return go.Scatter(x=x, y=y, **plot_args)
 
-        return line_plot
+        if self._dim == 3:
+            if self.ternary_style == "2d":
+                return go.Scatterternary(a=x, b=y, c=z, **plot_args)
+            if self.ternary_style == "3d":
+                return go.Scatter3d(x=y, y=x, z=z, **plot_args)
+
+        if self._dim == 4:
+            plot_args["line"]["width"] = 1.5
+            return go.Scatter3d(x=x, y=y, z=z, **plot_args)
+
+        return None
 
     def _create_plotly_fill(self):
         """
@@ -3609,10 +3615,7 @@ class PDPlotter:
         process_attributes=False,
         ax: plt.Axes = None,
     ):
-        """Show the plot using matplotlib.
-
-        Imports are done within the function as matplotlib is no longer the default.
-        """
+        """Show the plot using matplotlib."""
         ax = ax or pretty_plot(8, 6)
 
         if ordering is None:
