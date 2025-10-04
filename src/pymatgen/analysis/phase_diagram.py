@@ -393,7 +393,6 @@ class PhaseDiagram(MSONable):
         )
         self._stable_spaces = tuple(frozenset(e.elements) for e in self._stable_entries)
 
-    def as_dict(self):
     def __repr__(self) -> str:
         symbols = [el.symbol for el in self.elements]
         output = [
@@ -403,6 +402,7 @@ class PhaseDiagram(MSONable):
         ]
         return "\n".join(output)
 
+    def as_dict(self) -> dict[str, Any]:
         """Get MSONable dict representation of PhaseDiagram."""
         return {
             "@module": type(self).__module__,
@@ -517,7 +517,7 @@ class PhaseDiagram(MSONable):
         return np.array([comp.get_atomic_fraction(el) for el in self.elements[1:]])
 
     @property
-    def all_entries_hulldata(self):
+    def all_entries_hulldata(self) -> np.ndarray:
         """The ndarray used to construct the convex hull."""
         data = [
             [e.composition.get_atomic_fraction(el) for el in self.elements] + [e.energy_per_atom]
@@ -2595,7 +2595,7 @@ class PDPlotter:
 
     @property
     @lru_cache(1)  # noqa: B019
-    def pd_plot_data(self):
+    def pd_plot_data(self) -> tuple[list, dict, dict]:
         """
         Plotting data for phase diagram. Cached for repetitive calls.
 
@@ -2604,12 +2604,12 @@ class PDPlotter:
 
         Returns:
             A tuple containing three objects (lines, stable_entries, unstable_entries):
-            - lines is a list of list of coordinates for lines in the PD.
-            - stable_entries is a dict of {coordinates : entry} for each stable node
-                in the phase diagram. (Each coordinate can only have one
-                stable phase)
-            - unstable_entries is a dict of {entry: coordinates} for all unstable
-                nodes in the phase diagram.
+                - lines: a list of list of coordinates for lines in the PD.
+                - stable_entries: a dict of {coordinates: entry} for each stable node
+                    in the phase diagram. (Each coordinate can only have one
+                    stable phase)
+                - unstable_entries: a dict of {entry: coordinates} for all unstable
+                    nodes in the phase diagram.
         """
         pd = self._pd
         entries = pd.qhull_entries
@@ -3071,20 +3071,29 @@ class PDPlotter:
 
         return annotations_list
 
-    def _create_plotly_markers(self, highlight_entries=None, label_uncertainties=False):
+    def _create_plotly_markers(
+        self,
+        highlight_entries: Collection[PDEntry] | None = None,
+        label_uncertainties: bool = False,
+    ) -> tuple:
         """
-        Creates stable and unstable marker plots for overlaying on the phase diagram.
+        Creates stable, unstable and highlight marker plots for overlaying on the phase diagram.
 
         Returns:
             tuple[go.Scatter]: Plotly Scatter objects (unary, binary), go.Scatterternary(ternary_2d),
-            or go.Scatter3d (ternary_3d, quaternary) objects in order: (stable markers, unstable markers)
+            or go.Scatter3d (ternary_3d, quaternary) objects in order: (stable, unstable and highlight markers)
         """
 
-        def get_marker_props(coords, entries):
+        def get_marker_props(coords, entries) -> dict[str, Any]:
             """Get marker locations, hovertext, and error bars from pd_plot_data."""
-            x, y, z, texts, energies, uncertainties = [], [], [], [], [], []
+            x: list[float] = []
+            y: list[float] = []
+            z: list[float] = []
+            texts: list[str] = []
+            energies: list[float] = []
+            uncertainties: list[float] = []
 
-            is_stable = [entry in self._pd.stable_entries for entry in entries]
+            is_stable: list[bool] = [entry in self._pd.stable_entries for entry in entries]
             for coord, entry, stable in zip(coords, entries, is_stable, strict=True):
                 energy = round(self._pd.get_form_energy_per_atom(entry), 3)
 
@@ -3099,6 +3108,7 @@ class PDPlotter:
                 formula = comp.reduced_formula
                 clean_formula = htmlify(formula)
                 label = f"{clean_formula} ({entry_id}) <br>  Formation energy: {energy} eV/atom <br> "
+
                 if not stable:
                     e_above_hull = round(self._pd.get_e_above_hull(entry), 3)
                     if e_above_hull > self.show_unstable:
@@ -3123,6 +3133,7 @@ class PDPlotter:
                         _cartesian_positions = [x, y, z]
                         _cartesian_positions[axis].append(entry.composition[el])
                         label += f"<br> {el}: {round(entry.composition[el] / total_sum_el, 6)}"
+
                 elif self._dim == 3 and self.ternary_style == "3d":
                     x.append(coord[0])
                     y.append(coord[1])
@@ -3134,6 +3145,7 @@ class PDPlotter:
                     )
                     for el, _axis in zip(self._pd.elements, range(self._dim), strict=True):
                         label += f"<br> {el}: {round(entry.composition[el] / total_sum_el, 6)}"
+
                 elif self._dim == 4:
                     x.append(coord[0])
                     y.append(coord[1])
@@ -3145,6 +3157,7 @@ class PDPlotter:
                     )
                     for el, _axis in zip(self._pd.elements, range(self._dim), strict=True):
                         label += f"<br> {el}: {round(entry.composition[el] / total_sum_el, 6)}"
+
                 else:
                     x.append(coord[0])
                     y.append(coord[1])
@@ -3163,10 +3176,15 @@ class PDPlotter:
         if highlight_entries is None:
             highlight_entries = []
 
-        stable_coords, stable_entries = [], []
-        unstable_coords, unstable_entries = [], []
-        highlight_coords, highlight_ents = [], []
+        stable_coords: list[Sequence[float]] = []
+        unstable_coords: list[Sequence[float]] = []
+        highlight_coords: list[Sequence[float]] = []
 
+        stable_entries: list[PDEntry] = []
+        unstable_entries: list[PDEntry] = []
+        highlight_ents: list[PDEntry] = []
+
+        # Stable entries
         for coord, entry in zip(self.pd_plot_data[1], self.pd_plot_data[1].values(), strict=True):
             if entry in highlight_entries:
                 highlight_coords.append(coord)
@@ -3175,6 +3193,7 @@ class PDPlotter:
                 stable_coords.append(coord)
                 stable_entries.append(entry)
 
+        # Unstable entries
         for coord, entry in zip(self.pd_plot_data[2].values(), self.pd_plot_data[2], strict=True):
             if entry in highlight_entries:
                 highlight_coords.append(coord)
@@ -3504,22 +3523,24 @@ class PDPlotter:
 
         highlight_marker_plot = None
 
-        if self._dim in [1, 2]:
+        if self._dim in {1, 2}:
             stable_marker_plot, unstable_marker_plot = (
-                go.Scatter(**markers) for markers in [stable_markers, unstable_markers]
+                go.Scatter(**markers) for markers in (stable_markers, unstable_markers)
             )
 
             if highlight_entries:
                 highlight_marker_plot = go.Scatter(**highlight_markers)
+
         elif self._dim == 3 and self.ternary_style == "2d":
             stable_marker_plot, unstable_marker_plot = (
-                go.Scatterternary(**markers) for markers in [stable_markers, unstable_markers]
+                go.Scatterternary(**markers) for markers in (stable_markers, unstable_markers)
             )
             if highlight_entries:
                 highlight_marker_plot = go.Scatterternary(**highlight_markers)
+
         else:
             stable_marker_plot, unstable_marker_plot = (
-                go.Scatter3d(**markers) for markers in [stable_markers, unstable_markers]
+                go.Scatter3d(**markers) for markers in (stable_markers, unstable_markers)
             )
             if highlight_entries:
                 highlight_marker_plot = go.Scatter3d(**highlight_markers)
