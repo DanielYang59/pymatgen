@@ -74,7 +74,7 @@ class PDEntry(Entry):
         energy: float,
         name: str | None = None,
         attribute: object = None,
-    ):
+    ) -> None:
         """
         Args:
             composition (Composition): Composition
@@ -87,7 +87,7 @@ class PDEntry(Entry):
         self.name = name or self.reduced_formula
         self.attribute = attribute
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         name = ""
         if self.name != self.reduced_formula:
             name = f" ({self.name})"
@@ -98,12 +98,12 @@ class PDEntry(Entry):
         """The entry's energy."""
         return self._energy
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         """Get MSONable dict representation of PDEntry."""
         return super().as_dict() | {"name": self.name, "attribute": self.attribute}
 
     @classmethod
-    def from_dict(cls, dct: dict) -> Self:
+    def from_dict(cls, dct: dict[str, Any]) -> Self:
         """
         Args:
             dct (dict): dictionary representation of PDEntry.
