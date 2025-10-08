@@ -441,7 +441,7 @@ class Simplex(MSONable):
             point (list[float]): Point to test
             tolerance (float): Tolerance to test if point is in simplex.
         """
-        return (self.bary_coords(point) >= -tolerance).all()
+        return bool((self.bary_coords(point) >= -tolerance).all())
 
     def line_intersection(
         self,
