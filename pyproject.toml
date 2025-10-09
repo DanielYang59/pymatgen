@@ -90,7 +90,7 @@ Issues = "https://github.com/materialsproject/pymatgen/issues"
 Pypi = "https://pypi.org/project/pymatgen"
 
 [project.optional-dependencies]
-abinit = ["netcdf4>=1.7.2"]
+abinit = ["netcdf4>=1.7.2; python_version<'3.14'"] # no wheel for py314 yet
 ase = ["ase>=3.23.0"]
 # TODO: `fdint` seems not maintained anymore and cannot be installed
 # with `uv` on Python 3.10 as build-time dependency was not declared
