@@ -483,7 +483,7 @@ name = "cftime"
 version = "1.6.4.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ab/c8/1155d1d58003105307c7e5985f422ae5bcb2ca0cbc553cc828f3c5a934a7/cftime-1.6.4.post1.tar.gz", hash = "sha256:50ac76cc9f10ab7bd46e44a71c51a6927051b499b4407df4f29ab13d741b942f", size = 54631, upload-time = "2024-10-22T18:48:34.194Z" }
 wheels = [
@@ -1015,15 +1015,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fdint"
-version = "2.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e3/ef/95b0a2072880079ad0d9f6a67109644ad59716b692264554e67427a4fba9/fdint-2.0.2.tar.gz", hash = "sha256:30db139684d362652670e2cd3206b5dd7b3b93b86c3aff37f4b4fd4a3f98aead", size = 704116, upload-time = "2017-02-26T22:48:11.92Z" }
-
-[[package]]
 name = "filelock"
 version = "3.19.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1266,16 +1257,16 @@ name = "hiphive"
 version = "1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ase" },
-    { name = "h5py" },
-    { name = "numba" },
-    { name = "numpy" },
-    { name = "pandas" },
+    { name = "ase", marker = "python_full_version < '3.14'" },
+    { name = "h5py", marker = "python_full_version < '3.14'" },
+    { name = "numba", marker = "python_full_version < '3.14'" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
+    { name = "pandas", marker = "python_full_version < '3.14'" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "spglib" },
-    { name = "sympy" },
-    { name = "trainstation" },
+    { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' and python_full_version < '3.14'" },
+    { name = "spglib", marker = "python_full_version < '3.14'" },
+    { name = "sympy", marker = "python_full_version < '3.14'" },
+    { name = "trainstation", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/16/6a/697642c91eafefc253109114c2f8f69d39c997272f140e750c148e330859/hiphive-1.5.tar.gz", hash = "sha256:a8162686265aed88cfa6ad2721f39629102525100879484530cb7c25269ac386", size = 71384, upload-time = "2025-07-28T21:50:13.544Z" }
 wheels = [
@@ -2646,9 +2637,9 @@ name = "netcdf4"
 version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "certifi" },
-    { name = "cftime" },
-    { name = "numpy" },
+    { name = "certifi", marker = "python_full_version < '3.14'" },
+    { name = "cftime", marker = "python_full_version < '3.14'" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/71/ed/4d27fcfa40ebfdad3d2088a3de7ee48dbff7f35163e815ec1870d2a7398c/netcdf4-1.7.2.tar.gz", hash = "sha256:a4c6375540b19989896136943abb6d44850ff6f1fa7d3f063253b1ad3f8b7fce", size = 835064, upload-time = "2024-10-22T19:01:25.521Z" }
 wheels = [
@@ -2754,8 +2745,8 @@ name = "numba"
 version = "0.61.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "llvmlite" },
-    { name = "numpy" },
+    { name = "llvmlite", marker = "python_full_version < '3.14'" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/a0/e21f57604304aa03ebb8e098429222722ad99176a4f979d34af1d1ee80da/numba-0.61.2.tar.gz", hash = "sha256:8750ee147940a6637b80ecf7f95062185ad8726c8c28a2295b8ec1160a196f7d", size = 2820615, upload-time = "2025-04-09T02:58:07.659Z" }
 wheels = [
@@ -2925,14 +2916,14 @@ name = "openai"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "anyio" },
-    { name = "distro" },
-    { name = "httpx" },
-    { name = "jiter" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "tqdm" },
-    { name = "typing-extensions" },
+    { name = "anyio", marker = "python_full_version < '3.14'" },
+    { name = "distro", marker = "python_full_version < '3.14'" },
+    { name = "httpx", marker = "python_full_version < '3.14'" },
+    { name = "jiter", marker = "python_full_version < '3.14'" },
+    { name = "pydantic", marker = "python_full_version < '3.14'" },
+    { name = "sniffio", marker = "python_full_version < '3.14'" },
+    { name = "tqdm", marker = "python_full_version < '3.14'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b8/b1/8201e321a7d64a25c6f5a560320272d8be70547add40311fceb916518632/openai-2.2.0.tar.gz", hash = "sha256:bc49d077a8bf0e370eec4d038bc05e232c20855a19df0b58e5b3e5a8da7d33e0", size = 588512, upload-time = "2025-10-06T18:08:13.665Z" }
 wheels = [
@@ -3510,10 +3501,10 @@ name = "pydantic"
 version = "2.11.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "annotated-types" },
-    { name = "pydantic-core" },
-    { name = "typing-extensions" },
-    { name = "typing-inspection" },
+    { name = "annotated-types", marker = "python_full_version < '3.14'" },
+    { name = "pydantic-core", marker = "python_full_version < '3.14'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
+    { name = "typing-inspection", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/00/dd/4325abf92c39ba8623b5af936ddb36ffcfe0beae70405d456ab1fb2f5b8c/pydantic-2.11.7.tar.gz", hash = "sha256:d989c3c6cb79469287b1569f7447a17848c998458d49ebe294e975b9baf0f0db", size = 788350, upload-time = "2025-06-14T08:33:17.137Z" }
 wheels = [
@@ -3525,7 +3516,7 @@ name = "pydantic-core"
 version = "2.33.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ad/88/5f2260bdfae97aabf98f1778d43f69574390ad787afb646292a638c923d4/pydantic_core-2.33.2.tar.gz", hash = "sha256:7cb8bc3605c29176e1b105350d2e6474142d7c1bd1d9327c4a9bdb46bf827acc", size = 435195, upload-time = "2025-04-23T18:33:52.104Z" }
 wheels = [
@@ -3645,13 +3636,10 @@ dependencies = [
 
 [package.optional-dependencies]
 abinit = [
-    { name = "netcdf4" },
+    { name = "netcdf4", marker = "python_full_version < '3.14'" },
 ]
 ase = [
     { name = "ase" },
-]
-electronic-structure = [
-    { name = "fdint" },
 ]
 matcalc = [
     { name = "matcalc", marker = "python_full_version < '3.13'" },
@@ -3661,7 +3649,7 @@ mlp = [
     { name = "matgl", marker = "python_full_version < '3.13'" },
 ]
 numba = [
-    { name = "numba" },
+    { name = "numba", marker = "python_full_version < '3.14'" },
 ]
 numpy-v1 = [
     { name = "numpy" },
@@ -3673,11 +3661,11 @@ optional = [
     { name = "f90nml" },
     { name = "galore" },
     { name = "h5py" },
-    { name = "hiphive" },
+    { name = "hiphive", marker = "python_full_version < '3.14'" },
     { name = "jarvis-tools" },
     { name = "matcalc", marker = "python_full_version < '3.13'" },
     { name = "matgl", marker = "python_full_version < '3.13'" },
-    { name = "netcdf4" },
+    { name = "netcdf4", marker = "python_full_version < '3.14'" },
     { name = "phonopy" },
     { name = "pymatgen-analysis-alloys" },
     { name = "pyzeo", marker = "sys_platform != 'win32'" },
@@ -3707,7 +3695,7 @@ zeopp = [
 dev = [
     { name = "invoke" },
     { name = "jupyter" },
-    { name = "openai" },
+    { name = "openai", marker = "python_full_version < '3.14'" },
     { name = "pre-commit" },
 ]
 docs = [
@@ -3734,10 +3722,9 @@ requires-dist = [
     { name = "bibtexparser", specifier = ">=1.4.0" },
     { name = "chemview", marker = "extra == 'optional'", specifier = ">=0.6" },
     { name = "f90nml", marker = "extra == 'optional'", specifier = ">=1.1.2" },
-    { name = "fdint", marker = "extra == 'electronic-structure'", specifier = ">=2.0.2" },
     { name = "galore", marker = "extra == 'optional'", specifier = ">=0.6.1" },
     { name = "h5py", marker = "extra == 'optional'", specifier = ">=3.11.0" },
-    { name = "hiphive", marker = "extra == 'optional'", specifier = ">=1.3.1" },
+    { name = "hiphive", marker = "python_full_version < '3.14' and extra == 'optional'", specifier = ">=1.3.1" },
     { name = "jarvis-tools", marker = "extra == 'optional'", specifier = ">=2020.7.14" },
     { name = "joblib", specifier = ">=1" },
     { name = "matcalc", marker = "python_full_version < '3.13' and extra == 'matcalc'", specifier = ">=0.4.0" },
@@ -3746,9 +3733,9 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "monty", specifier = ">=2025.1.9" },
     { name = "moyopy", extras = ["interface"], marker = "extra == 'symmetry'", specifier = ">=0.3" },
-    { name = "netcdf4", marker = "extra == 'abinit'", specifier = ">=1.7.2" },
+    { name = "netcdf4", marker = "python_full_version < '3.14' and extra == 'abinit'", specifier = ">=1.7.2" },
     { name = "networkx", specifier = ">=2.7" },
-    { name = "numba", marker = "extra == 'numba'", specifier = ">=0.55" },
+    { name = "numba", marker = "python_full_version < '3.14' and extra == 'numba'", specifier = ">=0.55" },
     { name = "numpy", specifier = ">=1.25.0,<3" },
     { name = "numpy", marker = "extra == 'numpy-v1'", specifier = ">=1.25.0,<2" },
     { name = "orjson", specifier = ">=3.10,<4" },
@@ -3775,13 +3762,13 @@ requires-dist = [
     { name = "uncertainties", specifier = ">=3.1.4" },
     { name = "vtk", marker = "extra == 'vis'", specifier = ">=6.0.0" },
 ]
-provides-extras = ["abinit", "ase", "electronic-structure", "matcalc", "mlp", "numba", "numpy-v1", "optional", "prototypes", "symmetry", "tblite", "vis", "zeopp"]
+provides-extras = ["abinit", "ase", "matcalc", "mlp", "numba", "numpy-v1", "optional", "prototypes", "symmetry", "tblite", "vis", "zeopp"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "invoke", specifier = ">=2.2.0" },
     { name = "jupyter", specifier = ">=1.1.1" },
-    { name = "openai", specifier = ">=2.2.0" },
+    { name = "openai", marker = "python_full_version < '3.14'", specifier = ">=2.2.0" },
     { name = "pre-commit", specifier = ">=4.2.0" },
 ]
 docs = [
@@ -5248,10 +5235,10 @@ name = "trainstation"
 version = "1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "scikit-learn" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
+    { name = "scikit-learn", marker = "python_full_version < '3.14'" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' and python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/bc/674edf4fb12f40d9b626b99a994c9d8281a5d0d327ceb8239c62bdd750d9/trainstation-1.2.tar.gz", hash = "sha256:e2cda1716a09f98930aa34640bdb2ac05e49e675afe54979d81657f3fac37d9b", size = 28509, upload-time = "2025-07-30T08:32:19.603Z" }
 wheels = [
@@ -5303,7 +5290,7 @@ name = "typing-inspection"
 version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f8/b1/0c11f5058406b3af7609f121aaa6b609744687f1d158b3c3a5bf4cc94238/typing_inspection-0.4.1.tar.gz", hash = "sha256:6ae134cc0203c33377d43188d4064e9b357dba58cff3185f22924610e70a9d28", size = 75726, upload-time = "2025-05-21T18:55:23.885Z" }
 wheels = [
