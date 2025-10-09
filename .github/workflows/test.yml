@@ -49,7 +49,7 @@ jobs:
             resolution: highest
             extras: optional,prototypes
           - os: windows-latest
-            python: "3.12"
+            python: "3.11"
             resolution: highest
             extras: prototypes,optional,numpy-v1 # Test NP1 on Windows (quite buggy ATM)
           - os: macos-latest
