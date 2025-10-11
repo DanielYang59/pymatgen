@@ -886,6 +886,73 @@ SIGMA = 0.05"""
         incar = Incar.from_file(tmp_file)
         assert incar == self.incar
 
+    def test_from_str_multiline_str(self):
+        r"""Test of handling complex INCAR:
+        - Multiple statements on a single line separated by semicolon
+        - Comments marked by hashtag # or exclamation mark !
+        - Ignore lines does not fit (tag = values) statement format
+        - Long lines split by backslash \
+        - Multi-line strings (comment would not be ignored), e.g. WANNIER90_WIN
+        """
+        incar_str = r"""
+        # Test interaction between semicolon and comment
+        ENCUT = 520; ISMEAR = 0  # smearing scheme
+        PREC = Accurate ; LREAL = Auto  ! precision and projection scheme
+        SIGMA = 0.05  # random comment with hashtag
+        EDIFF = 1e-6  ! another comment with exclamation mark
+
+        # Line continuation with backslash
+        MAGMOM  = 0 0 1.0 0 0 -1.0 \
+            0 0 1.0 0 0 -1.0 \
+            6*0
+
+        # Multi-line string with embedded comments
+        WANNIER90_WIN = "Begin Projections
+        Fe:d ; Fe:p  # comment inside string
+        End Projections  ! random comment
+        "
+
+        ! invalid statement (tag = values)
+        ! invalid ENCUT = 100
+        # still invalid ENCUT = 200
+        Not a valid statement
+        ENCUT
+        """
+
+        incar = Incar.from_str(incar_str)
+
+        expected_keys = {
+            "ENCUT",
+            "ISMEAR",
+            "PREC",
+            "LREAL",
+            "SIGMA",
+            "EDIFF",
+            "MAGMOM",
+            "WANNIER90_WIN",
+        }
+        assert set(incar.keys()) == expected_keys
+
+        # Basic parsing
+        assert incar["SIGMA"] == approx(0.05)
+        assert incar["EDIFF"] == approx(1e-6)
+
+        # Line with both ; and comment
+        assert incar["ENCUT"] == 520
+        assert incar["ISMEAR"] == 0
+        assert incar["PREC"].lower() == "accurate"
+        assert incar["LREAL"].lower() == "auto"
+
+        # Continuation merged properly
+        magmom = incar["MAGMOM"]
+        assert magmom == [0, 0, 1.0, 0, 0, -1.0, 0, 0, 1.0, 0, 0, -1.0] + [0.0] * 6
+
+        # Multi-line string with comment
+        win = incar["WANNIER90_WIN"]
+        expected_win = "Begin Projections\nFe:d ; Fe:p  # comment inside string\nEnd Projections  ! random comment\n"
+        # Comments and structure inside string should be preserved exactly
+        assert win.strip() == expected_win.strip()
+
     def test_get_str(self):
         incar_str = self.incar.get_str(pretty=True, sort_keys=True)
         expected = """ALGO       =  Damped
