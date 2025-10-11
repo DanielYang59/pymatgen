@@ -886,22 +886,34 @@ SIGMA = 0.05"""
         incar = Incar.from_file(tmp_file)
         assert incar == self.incar
 
-    def test_from_str_multiline_str(self):
+    def test_from_str_complex(self):
         r"""Test of handling complex INCAR:
         - Multiple statements on a single line separated by semicolon
         - Comments marked by hashtag # or exclamation mark !
         - Ignore lines does not fit (tag = values) statement format
         - Long lines split by backslash \
         - Multi-line strings (comment would not be ignored), e.g. WANNIER90_WIN
+
+        TODO:
+            - test line-ending char independence
+            - test cast casting for multi-line string (auto-capitalization?)
         """
         incar_str = r"""
+        # Test comment handling (especially for string tags)
+        SIGMA = 0.05  # random comment (known float tag)
+        EDIFF = 1e-6  ! another comment (known float tag)
+        ALGO = Normal # comment (unknown tag -> inferred as str)
+        GGA = PE ! comment (unknown tag -> inferred as str)
+
         # Test interaction between semicolon and comment
         ENCUT = 520; ISMEAR = 0  # smearing scheme
         PREC = Accurate ; LREAL = Auto  ! precision and projection scheme
-        SIGMA = 0.05  # random comment with hashtag
-        EDIFF = 1e-6  ! another comment with exclamation mark
+        NELM = 60; ! ENCUT = 200  # should not parse second assignment
+        ENMIN = 100; # ENCUT = 200  # should not parse second assignment
 
-        # Line continuation with backslash
+        # Line continuation with backslash (backslash in comment)
+        ENMAX = 200 ! \
+        IBRION = 0 # \
         MAGMOM  = 0 0 1.0 0 0 -1.0 \
             0 0 1.0 0 0 -1.0 \
             6*0
@@ -912,11 +924,13 @@ SIGMA = 0.05"""
         End Projections  ! random comment
         "
 
-        ! invalid statement (tag = values)
+        # Test valid statement (tag = values) in comment
         ! invalid ENCUT = 100
         # still invalid ENCUT = 200
+
+        # Test invalid statement (tag = values)
         Not a valid statement
-        ENCUT
+        ENCUT 300
         """
 
         incar = Incar.from_str(incar_str)
@@ -926,6 +940,12 @@ SIGMA = 0.05"""
             "ISMEAR",
             "PREC",
             "LREAL",
+            "NELM",
+            "ENMIN",
+            "ENMAX",
+            "IBRION",
+            "ALGO",
+            "GGA",
             "SIGMA",
             "EDIFF",
             "MAGMOM",
@@ -933,13 +953,19 @@ SIGMA = 0.05"""
         }
         assert set(incar.keys()) == expected_keys
 
-        # Basic parsing
+        # Comment handling
         assert incar["SIGMA"] == approx(0.05)
         assert incar["EDIFF"] == approx(1e-6)
+        assert incar["ALGO"] == "Normal"
+        assert incar["GGA"] == "Pe"
 
         # Line with both ; and comment
         assert incar["ENCUT"] == 520
         assert incar["ISMEAR"] == 0
+        assert incar["NELM"] == 60
+        assert incar["ENMIN"] == 100
+        assert incar["ENMAX"] == 200
+        assert incar["IBRION"] == 0
         assert incar["PREC"].lower() == "accurate"
         assert incar["LREAL"].lower() == "auto"
 
@@ -952,6 +978,12 @@ SIGMA = 0.05"""
         expected_win = "Begin Projections\nFe:d ; Fe:p  # comment inside string\nEnd Projections  ! random comment\n"
         # Comments and structure inside string should be preserved exactly
         assert win.strip() == expected_win.strip()
+
+    def test_from_str_not_closed_multi_line_str(self):
+        """Test not closed (no ending quote) multi-line string.
+
+        TODO:
+        """
 
     def test_get_str(self):
         incar_str = self.incar.get_str(pretty=True, sort_keys=True)
@@ -1070,6 +1102,7 @@ SIGMA = 0.1"""
 
     def test_proc_types(self):
         assert Incar.proc_val("HELLO", "-0.85 0.85") == "-0.85 0.85"
+        # `ML_MODE` should always be lower case
         assert Incar.proc_val("ML_MODE", "train") == "train"
         assert Incar.proc_val("ML_MODE", "RUN") == "run"
         assert Incar.proc_val("ALGO", "fast") == "Fast"
